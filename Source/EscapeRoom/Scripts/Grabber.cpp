@@ -1,8 +1,11 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Grabber.h"
+#include "Components/PrimitiveComponent.h"
 #include "Public/DrawDebugHelpers.h"
 
+//Used to more easily tell when variables are used as out parameters
+#define OUT
 
 // Sets default values for this component's properties
 UGrabber::UGrabber()
@@ -14,14 +17,16 @@ UGrabber::UGrabber()
 	// ...
 }
 
-
 // Called when the game starts
 void UGrabber::BeginPlay()
 {
 	Super::BeginPlay();
 	playerController = GetOwner();
-	// ...
-	UE_LOG(LogTemp, Warning, TEXT("Grabber reporting for duty!"));
+
+	FindComponents();
+	
+	///Bind input axis
+	BindInputs();
 }
 
 
@@ -30,29 +35,76 @@ void UGrabber::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompone
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	///Get what player is looking at and print it to log
+	if (physicsHandle->GrabbedComponent) {
+		///Get where player is looking
+		FVector actorViewVector;
+		FRotator actorViewRotation;
+		playerController->GetActorEyesViewPoint(OUT actorViewVector, OUT actorViewRotation);
+
+		///Get a vector that determines the furthest point the player can reach
+		FVector playerReachEnd = actorViewVector + actorViewRotation.Vector() * reach;
+		physicsHandle->SetTargetLocation(playerReachEnd);
+	}
+}
+
+
+void UGrabber::FindComponents()
+{
+	physicsHandle = playerController->FindComponentByClass<UPhysicsHandleComponent>();
+	inputComponent = playerController->FindComponentByClass<UInputComponent>();
+	//Check if components aren't found
+	if (!physicsHandle) {
+		UE_LOG(LogTemp, Error, TEXT("No physics handle found on %s"), *playerController->GetName());
+	}
+	if (!inputComponent) {
+		UE_LOG(LogTemp, Error, TEXT("No input component found on %s"), *playerController->GetName());
+	}
+}
+
+void UGrabber::BindInputs()
+{
+	if (inputComponent) {
+		inputComponent->BindAction("Grab", IE_Pressed, this, &UGrabber::Grab);
+		inputComponent->BindAction("Grab", IE_Released, this, &UGrabber::Release);
+	}
+}
+
+void UGrabber::Grab() {
+	UE_LOG(LogTemp, Warning, TEXT("Grab pressed"));
+	FHitResult hitResult = GetFirstPhysicsBodyInReach();
+
+	if (hitResult.GetActor()) {
+		UPrimitiveComponent* objectToGrab = hitResult.GetComponent();
+		physicsHandle->GrabComponentAtLocationWithRotation(objectToGrab, NAME_None, objectToGrab->GetOwner()->GetActorLocation(), objectToGrab->GetOwner()->GetActorRotation());
+	}
+	
+}
+
+void UGrabber::Release() {
+	UE_LOG(LogTemp, Warning, TEXT("Grab released"));
+	physicsHandle->ReleaseComponent();
+}
+
+FHitResult UGrabber::GetFirstPhysicsBodyInReach() const
+{
+	///Get where player is looking
 	FVector actorViewVector;
 	FRotator actorViewRotation;
-	playerController->GetActorEyesViewPoint(actorViewVector, actorViewRotation);
-	FString vectorString = actorViewVector.ToString();
-	FString rotationString = actorViewRotation.ToString();
-	UE_LOG(LogTemp, Warning, TEXT("Player looking at: %s %s"), *vectorString, *rotationString);
+	playerController->GetActorEyesViewPoint(OUT actorViewVector, OUT actorViewRotation);
 
-	///Draw line to show player reach
-	FVector actorDirectionVector = actorViewRotation.Vector() * reach;
-	FVector viewEndPoint = actorViewVector + actorDirectionVector;	
-	DrawDebugLine(GetWorld(), actorViewVector, viewEndPoint, FColor(0, 0, 255), false, 0.f, 0, 2.f);
+	///Get a vector that determines the furthest point the player can reach
+	FVector playerReachEnd = actorViewVector + actorViewRotation.Vector() * reach;
 
 	///Setup query parameters
 	FCollisionQueryParams queryParams(FName(TEXT("")), false, GetOwner());
-
 	///Raycast(AKA Line-trace) a set distance
 	FHitResult lineTraceHit;
-
-	bool traceHit = GetWorld()->LineTraceSingleByObjectType(lineTraceHit, actorViewVector, viewEndPoint, FCollisionObjectQueryParams(ECollisionChannel::ECC_PhysicsBody), queryParams);
+	bool traceHit = GetWorld()->LineTraceSingleByObjectType(lineTraceHit, actorViewVector, playerReachEnd, FCollisionObjectQueryParams(ECollisionChannel::ECC_PhysicsBody), queryParams);
 	///See what raycast hits
 	if (traceHit) {
 		UE_LOG(LogTemp, Warning, TEXT("Line trace hit: %s"), *lineTraceHit.GetActor()->GetName());
 	}
+
+	return lineTraceHit;
 }
 
