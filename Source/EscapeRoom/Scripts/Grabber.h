@@ -42,6 +42,8 @@ private:
 	void FindComponents();
 	//Bind Inputs
 	void BindInputs();
+	//Get Player Reach Vector
+	FVector GetPlayerReach() const;
 	//Line trace player reach
 	FHitResult GetFirstPhysicsBodyInReach() const;
 

@@ -36,13 +36,7 @@ void UGrabber::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompone
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	if (physicsHandle->GrabbedComponent) {
-		///Get where player is looking
-		FVector actorViewVector;
-		FRotator actorViewRotation;
-		playerController->GetActorEyesViewPoint(OUT actorViewVector, OUT actorViewRotation);
-
-		///Get a vector that determines the furthest point the player can reach
-		FVector playerReachEnd = actorViewVector + actorViewRotation.Vector() * reach;
+		FVector playerReachEnd = GetPlayerReach();
 		physicsHandle->SetTargetLocation(playerReachEnd);
 	}
 }
@@ -87,19 +81,14 @@ void UGrabber::Release() {
 
 FHitResult UGrabber::GetFirstPhysicsBodyInReach() const
 {
-	///Get where player is looking
-	FVector actorViewVector;
-	FRotator actorViewRotation;
-	playerController->GetActorEyesViewPoint(OUT actorViewVector, OUT actorViewRotation);
-
 	///Get a vector that determines the furthest point the player can reach
-	FVector playerReachEnd = actorViewVector + actorViewRotation.Vector() * reach;
+	FVector playerReachEnd = GetPlayerReach();
 
 	///Setup query parameters
 	FCollisionQueryParams queryParams(FName(TEXT("")), false, GetOwner());
 	///Raycast(AKA Line-trace) a set distance
 	FHitResult lineTraceHit;
-	bool traceHit = GetWorld()->LineTraceSingleByObjectType(lineTraceHit, actorViewVector, playerReachEnd, FCollisionObjectQueryParams(ECollisionChannel::ECC_PhysicsBody), queryParams);
+	bool traceHit = GetWorld()->LineTraceSingleByObjectType(lineTraceHit, playerController->GetActorLocation(), playerReachEnd, FCollisionObjectQueryParams(ECollisionChannel::ECC_PhysicsBody), queryParams);
 	///See what raycast hits
 	if (traceHit) {
 		UE_LOG(LogTemp, Warning, TEXT("Line trace hit: %s"), *lineTraceHit.GetActor()->GetName());
@@ -108,3 +97,12 @@ FHitResult UGrabber::GetFirstPhysicsBodyInReach() const
 	return lineTraceHit;
 }
 
+FVector UGrabber::GetPlayerReach() const
+{
+	FVector actorViewVector;
+	FRotator actorViewRotation;
+	playerController->GetActorEyesViewPoint(OUT actorViewVector, OUT actorViewRotation);
+
+	///Return a vector that determines the furthest point the player can reach
+	return actorViewVector + actorViewRotation.Vector() * reach;
+}
