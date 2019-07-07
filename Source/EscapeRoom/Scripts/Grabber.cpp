@@ -34,8 +34,8 @@ void UGrabber::BeginPlay()
 void UGrabber::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-	if (physicsHandle->GrabbedComponent) {
+	if (!physicsHandle) { }
+	else if (physicsHandle->GrabbedComponent) {
 		FVector playerReachEnd = GetPlayerReach();
 		physicsHandle->SetTargetLocation(playerReachEnd);
 	}
@@ -76,7 +76,9 @@ void UGrabber::Grab() {
 
 void UGrabber::Release() {
 	UE_LOG(LogTemp, Warning, TEXT("Grab released"));
-	physicsHandle->ReleaseComponent();
+	if (physicsHandle) {
+		physicsHandle->ReleaseComponent();
+	}
 }
 
 FHitResult UGrabber::GetFirstPhysicsBodyInReach() const
