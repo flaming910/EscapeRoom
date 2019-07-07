@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "Components/PrimitiveComponent.h"
 #include "Engine/TriggerVolume.h"
 #include "OpenDoor.generated.h"
 
@@ -37,12 +38,14 @@ private:
 	float doorCloseDelay = 0.5f;
 
 	UPROPERTY(EditAnywhere)
-	ATriggerVolume* PressurePlate;
+	ATriggerVolume* pressurePlate;
 
 	UPROPERTY(EditAnywhere)
-	AActor* ActorThatTriggers; //Actor that triggers pressure plate
+	float massNeeded;
 
 	float lastDoorOpenTime;
 	AActor* doorActor;
+
+	float GetMassOnPlate();
 
 };
