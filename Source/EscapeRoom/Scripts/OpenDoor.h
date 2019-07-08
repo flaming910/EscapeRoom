@@ -25,9 +25,6 @@ protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
-	void OpenDoor();
-	void CloseDoor();
-
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
@@ -41,23 +38,21 @@ public:
 private:
 
 	UPROPERTY(EditAnywhere)
-	float openAngle = 90.f;
+	ATriggerVolume* pressurePlate1 = nullptr;
 
 	UPROPERTY(EditAnywhere)
-	float doorCloseDelay = 0.5f;
+	ATriggerVolume* pressurePlate2 = nullptr;
 
 	UPROPERTY(EditAnywhere)
-	ATriggerVolume* pressurePlate = nullptr;
+	float massNeeded1;
 
 	UPROPERTY(EditAnywhere)
-	float massNeeded;
+	float massNeeded2;
 
 	//UPROPERTY(BlueprintAssignable)
 	
-
-	float lastDoorOpenTime;
 	AActor* doorActor = nullptr;
 
-	float GetMassOnPlate();
+	float GetMassOnPlate(ATriggerVolume* pressurePlate);
 
 };

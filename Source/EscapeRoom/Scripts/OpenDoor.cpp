@@ -21,43 +21,31 @@ void UOpenDoor::BeginPlay()
 {
 	Super::BeginPlay();
 	doorActor = GetOwner();
-	if (!pressurePlate) {
+	if (!pressurePlate1) {
 		UE_LOG(LogTemp, Error, TEXT("No pressure plate set on %s"), *doorActor->GetName());
 	}
-	//ActorThatTriggers = GetWorld()->GetFirstPlayerController()->GetPawn();
+	if (!pressurePlate2) {
+		UE_LOG(LogTemp, Error, TEXT("No pressure plate set on %s"), *doorActor->GetName());
+	}
 }
-
-void UOpenDoor::OpenDoor()
-{
-	//doorActor->SetActorRotation(FRotator(0.0f, openAngle, 0.0f));
-	onOpenRequest.Broadcast();
-}
-
-void UOpenDoor::CloseDoor()
-{
-	//doorActor->SetActorRotation(FRotator(0.f, 0.f, 0.f));
-	onCloseRequest.Broadcast();
-}
-
 
 // Called every frame
 void UOpenDoor::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if (GetMassOnPlate() >= massNeeded) {
-		OpenDoor();
-		lastDoorOpenTime = GetWorld()->GetTimeSeconds();
+	if (GetMassOnPlate(pressurePlate1) >= massNeeded1 && GetMassOnPlate(pressurePlate2) >= massNeeded2) {
+		onOpenRequest.Broadcast();
 	} 
-	else if(lastDoorOpenTime + doorCloseDelay <= GetWorld()->GetTimeSeconds()){
-		CloseDoor();
+	else {
+		onCloseRequest.Broadcast();
 	}
 }
 
-float UOpenDoor::GetMassOnPlate()
+float UOpenDoor::GetMassOnPlate(ATriggerVolume* pressurePlate)
 {
 	float totalMass = 0.f;
-	if (!pressurePlate) {
+	if (!pressurePlate1) {
 		return 0.0f;
 	} else{
 		//Find actors on pressure plate
